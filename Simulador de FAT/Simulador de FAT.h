@@ -7,7 +7,7 @@ const uint16_t StartBootBlock = 0x0000; //endereço de memória em que começa o
 const uint16_t bootBlock = 0x0400; //endereço de memória em que termina o boot block
 const uint16_t StartFAT = 0x0400; //endereço de memória em que começa a tabela FAT
 const uint16_t FAT = 0x2400; //endereço de memória em que termina a tabela FAT
-const uint16_t StartRootDIR = 0x2400; //endereço de memória que começa os cluster de dados
+const uint16_t StartRootDIR = 0x2400; //endereço de memória que comseça os cluster de dados
 /*--------------------------------------------------------------------------------------------*/
 
 /*Constantes utilizadas para comparação na busca pelos diretórios-----------------------------*/
