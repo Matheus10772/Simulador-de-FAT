@@ -39,7 +39,7 @@ int  Transfer_Fat(){
 		return FALIED_VALUE; 
 	}
 	fseek(FATDisk,1024,0);
-	fread(tableFAT,FAT,tableFATSize,FATDisk);
+	fread(teste,sizeof(teste),1,FATDisk);
 	printFat();
 	return SUCCESSFUL_VALUE;
 }
@@ -47,7 +47,7 @@ int  Transfer_Fat(){
 void printFat(){
 	for (int i = 0; i < 4096; i++)
 	{
-		printf(" %x \n", tableFAT[i].entry);
+		printf(" %x \n", teste[i].entry);
 	}
 	
 }
