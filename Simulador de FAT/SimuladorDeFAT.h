@@ -64,3 +64,5 @@ typedef union {
 dirEntry buffer[32]; //1024 bytes reservados na memória principal para servir como buffer de I/O caso seja necessário
 
 int createNewVirtualFATDisk();
+int Transfer_Fat();
+void printFat();
