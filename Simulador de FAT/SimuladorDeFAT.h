@@ -1,4 +1,4 @@
-﻿#include <stdio.h>
+#include <stdio.h>
 #include <string.h>
 
 #ifdef __unix__         
@@ -55,6 +55,7 @@ typedef struct {
 }FATEntry;
 
 FATEntry tableFAT[4096]; //8192 bytes reservados na memória principal para carregar a tabela FAT
+FATEntry teste[4096];
 
 typedef union {
 	dirEntry _dirEntry[clusterSize / sizeof(dirEntry)];
