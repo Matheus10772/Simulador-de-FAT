@@ -1,4 +1,4 @@
-﻿#include "SimuladorDeFAT.h"
+#include "fat.h"
 
 int createNewVirtualFATDisk()
 {
@@ -33,7 +33,7 @@ int createNewVirtualFATDisk()
 }
  //Função de passagem de valores do Disco para a tabela Fat
 int  Transfer_Fat(){
-	FILE * FATDisk = fopen(FATDiskName, "rt");
+	FILE * FATDisk = fopen(FATDiskName, "r+b");
 	if(FATDisk == NULL){
 		fprintf(stderr, "Falha ao abrir o disco para leitura! \n ");
 		return FALIED_VALUE; 
