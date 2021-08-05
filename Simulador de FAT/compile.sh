@@ -1,1 +1,0 @@
-gcc -o GerenciadorDeDisco SimuladorDeFAT.c
