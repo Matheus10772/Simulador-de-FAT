@@ -23,6 +23,7 @@
 #define DIRMaxCountEntry 32 //entradas
 #define dataClustersCountEntry 4086 //entradas
 #define dirEntrySize 32 //bytes
+#define totalCountCluster 0x0400
 
 
 
@@ -86,5 +87,8 @@ int findFreeDir(dataCluster* bufferDIR);
 int loadFat();
 int loadRootDir();
 int writeDataOnDisk(dataCluster buffer[], int countBuffer, char directory[], char arqName[]);
-int writeDirOnDisk(char directory[]);
+int writeDirOnDisk(char directory[], char name[]);
+int deleteDataOnDisk(char directory[], char arqName[]);
+int deleteDirOnDisk(char directory[], char dirName[]);
+dataCluster* readDataOnDisk(char directory[], char arqName[]);
 void printFat();
