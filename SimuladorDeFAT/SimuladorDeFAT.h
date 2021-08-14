@@ -2,7 +2,7 @@
 #include <string.h>
 #include <stdlib.h>
 #include <malloc.h>
-
+#include "shell.h"
 
 #ifdef __unix__         
 	/*#include <unistd.h>
@@ -10,7 +10,7 @@
 	#include "nfd.h"*/
 	#include <unistd.h>
 	#include <sys/types.h>
-	#include<stdint.h>
+	#include <stdint.h>
 #elif defined(_WIN32) || defined(WIN32) 
 	#define OS_Windows
 	#include <windows.h>
@@ -30,6 +30,8 @@
 char* FATDiskName = "fat.part";
 const int FALIED_VALUE = -1;
 const int SUCCESSFUL_VALUE = 1;
+
+FILE* FATDisk;
 
 /*Endereços de memória fixos------------------------------------------------------------------*/
 const uint16_t StartBootBlock = 0x0000; //endereço de memória em que começa o boot block
@@ -78,17 +80,21 @@ dataCluster bufferDir;
 dataCluster bufferData;
 
 int createNewVirtualFATDisk();
+int load();
+void persisOnDisk();
 void clearBuffer();
 char** splitString(char string[], const char operator);
 int createNewDirEntry(char dir[], char name[]);
-uint16_t loadAvaliableDIrEntry(char directory[], FILE* FATDisk);
-uint16_t findFreeCluster(FILE* FATDisk);
+uint16_t loadAvaliableDIrEntry(char directory[]);
+uint16_t findFreeCluster();
 int findFreeDir(dataCluster* bufferDIR);
 int loadFat();
 int loadRootDir();
 int writeDataOnDisk(dataCluster buffer[], int countBuffer, char directory[], char arqName[]);
+int createNewFile(char directory[], char arqName[]);
+int replaceDataOnDisk(dataCluster buffer[], int countBuffer, char directory[], char arqName[]);
 int writeDirOnDisk(char directory[], char name[]);
-int deleteDataOnDisk(char directory[], char arqName[]);
+int deleteEntryOnDisk(char directory[], char arqName[]);
 int deleteDirOnDisk(char directory[], char dirName[]);
 dataCluster* readDataOnDisk(char directory[], char arqName[]);
 int showAllDirEntrys(char directory[]);

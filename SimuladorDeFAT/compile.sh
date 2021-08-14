@@ -1,1 +1,1 @@
-gcc -o GerenciadorDeDisco SimuladorDeFAT.c
+gcc -o GerenciadorDeDisco SimuladorDeFAT.c shell.c -lreadline -lncurses
