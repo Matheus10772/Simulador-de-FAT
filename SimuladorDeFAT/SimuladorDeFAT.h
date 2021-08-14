@@ -43,9 +43,9 @@ const uint16_t DataCluster = 0x226c0; //endereço de memória que termina as ent
 /*--------------------------------------------------------------------------------------------*/
 
 /*Constantes utilizadas para comparação na busca pelos diretórios-----------------------------*/
-static const uint8_t freeCluster[1024]; //indica que o cluster esta vazio e/ou pode ser reescrito
+const uint8_t freeCluster[1024]; //indica que o cluster esta vazio e/ou pode ser reescrito
 uint16_t freeClusterValue = 0x0000;
-static const uint8_t  freeDir[32];
+const uint8_t  freeDir[32];
 // nextCluster - > vai de 0x0001 ~ 0xfffc
 const uint16_t bootBlock_FAT = 0xfffd; //valor que marca a divisão entre o fim/início de bootBlock/FAT
 const uint16_t FATValue = 0xfffe; //valor para preencher a FAT na criação do disco
@@ -80,7 +80,7 @@ dataCluster bufferData;
 int createNewVirtualFATDisk();
 void clearBuffer();
 char** splitString(char string[], const char operator);
-int createNewDirEntry(char dir[], FILE* FATDisk, char name[]);
+int createNewDirEntry(char dir[], char name[]);
 uint16_t loadAvaliableDIrEntry(char directory[], FILE* FATDisk);
 uint16_t findFreeCluster(FILE* FATDisk);
 int findFreeDir(dataCluster* bufferDIR);
@@ -91,4 +91,5 @@ int writeDirOnDisk(char directory[], char name[]);
 int deleteDataOnDisk(char directory[], char arqName[]);
 int deleteDirOnDisk(char directory[], char dirName[]);
 dataCluster* readDataOnDisk(char directory[], char arqName[]);
+int showAllDirEntrys(char directory[]);
 void printFat();
