@@ -31,8 +31,6 @@ char* FATDiskName = "fat.part";
 const int FALIED_VALUE = -1;
 const int SUCCESSFUL_VALUE = 1;
 
-FILE* FATDisk;
-
 /*Endereços de memória fixos------------------------------------------------------------------*/
 const uint16_t StartBootBlock = 0x0000; //endereço de memória em que começa o boot block
 const uint16_t bootBlock = 0x0400; //endereço de memória em que termina o boot block
@@ -81,7 +79,6 @@ dataCluster bufferData;
 
 int createNewVirtualFATDisk();
 int load();
-void persisOnDisk();
 void clearBuffer();
 char** splitString(char string[], const char operator);
 int createNewDirEntry(char dir[], char name[]);
@@ -91,6 +88,7 @@ int findFreeDir(dataCluster* bufferDIR);
 int loadFat();
 int loadRootDir();
 int writeDataOnDisk(dataCluster buffer[], int countBuffer, char directory[], char arqName[]);
+int appendDataOnDisk(dataCluster buffer[], int countBuffer, char directory[], char arqName[]);
 int createNewFile(char directory[], char arqName[]);
 int replaceDataOnDisk(dataCluster buffer[], int countBuffer, char directory[], char arqName[]);
 int writeDirOnDisk(char directory[], char name[]);

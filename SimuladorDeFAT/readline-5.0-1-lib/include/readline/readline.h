@@ -22,6 +22,7 @@
 
 #if !defined (_READLINE_H_)
 #define _READLINE_H_
+#define READLINE_LIBRARY
 
 #ifdef __cplusplus
 extern "C" {
@@ -52,15 +53,16 @@ extern "C" {
 #endif
 
 #if defined (READLINE_LIBRARY)
-#  include "rlstdc.h"
-#  include "rltypedefs.h"
+//#  include "rlstdc.h"
+//#  include "rltypedefs.h"
 #  include "keymaps.h"
 #  include "tilde.h"
 #else
-#  include <readline/rlstdc.h>
-#  include <readline/rltypedefs.h>
-#  include <readline/keymaps.h>
-#  include <readline/tilde.h>
+//#  include <readline/rlstdc.h>
+#include "rlstdc.h"
+#  include "rltypedefs.h"
+#  include "keymaps.h"
+#  include "tilde.h"
 #endif
 
 /* Hex-encoded Readline version number. */

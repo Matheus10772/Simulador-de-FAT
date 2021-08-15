@@ -7,7 +7,8 @@ char* readInput()
 	char* line;
 	char* message = (char*)calloc(256, sizeof(char));
 	sprintf(message, "%s", "GDV_Shell> ");
-	strcat(message, currentDirectory);
+	/*strcat(message, currentDirectory);
+	strcat(message, " ");*/
 	line = readline(message);
 	add_history(line);
 	return line;

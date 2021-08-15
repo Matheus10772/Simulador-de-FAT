@@ -2,9 +2,9 @@
 
 int createNewVirtualFATDisk()
 {
-	FATDisk = fopen(FATDiskName, "wb");
+	FILE* FATDisk = fopen(FATDiskName, "wb");
 	if (FATDisk == NULL) {
-		fprintf(stderr, "Falha ao criar novo disco");
+		fprintf(stderr, "Falha ao criar um novo disco virtual");
 		return FALIED_VALUE;
 	}
 
@@ -28,12 +28,9 @@ int createNewVirtualFATDisk()
 
 	dirEntry startRootDIR[DIRMaxCountEntry]; //Inicializando o diretório root
 	memset(startRootDIR, freeClusterValue, DIRMaxCountEntry * dirEntrySize);
-	/*for (int i = 0; i < DIRMaxCountEntry; i++) {
-		sprintf(startRootDIR[i].filename, "%s", "NULL");
-	}*/
 	fwrite(startRootDIR, sizeof(dirEntry), DIRMaxCountEntry, FATDisk); //persistindo a inicialização do root no disco
 
-	
+
 	memset(freeCluster, freeClusterValue, clusterSize);
 
 	/*preenchendo o data cluster com 0x0000**************************************************/
@@ -45,7 +42,6 @@ int createNewVirtualFATDisk()
 	//****************************************************************************************
 
 	fclose(FATDisk);
-	load();
 	createNewDirEntry("", "root");
 
 	return SUCCESSFUL_VALUE;
@@ -53,20 +49,11 @@ int createNewVirtualFATDisk()
 
 int load()
 {
-	FATDisk = fopen(FATDiskName, "r+b");
-	if (FATDisk == NULL) {
-		fprintf(stderr, "Falha ao abrir o disco para leitura! \n ");
-		return FALIED_VALUE;
-	}
+	clearBuffer();
 	loadFat();
 	return SUCCESSFUL_VALUE;
 }
 
-void persisOnDisk()
-{
-	fclose(FATDisk);
-	FATDisk = fopen(FATDiskName, "r+b");
-}
 
 void clearBuffer()
 {
@@ -100,32 +87,30 @@ char** splitString(char string[], const char operator) {//divide uma string em v
 int createNewDirEntry(char dir[], char name[])
 {
 	uint16_t adress = loadAvaliableDIrEntry(dir);
+	if (adress == NULL)
+		return FALIED_VALUE;
+	FILE* FATDisk = fopen(FATDiskName, "r+b");
+	if (FATDisk == NULL) {
+		fprintf(stderr, "Falha ao abrir o disco");
+		return FALIED_VALUE;
+	}
 	tableFAT[adress].entry = endCluster;
 	fseek(FATDisk, adress * totalCountCluster, SEEK_SET);
 	clearBuffer();
 	fread(bufferDir._dirEntry, sizeof(dirEntry), DIRMaxCountEntry, FATDisk);
-	if(memcmp(bufferDir._dirEntry, freeCluster, clusterSize) != 0)
+	if (memcmp(bufferDir._dirEntry, freeCluster, clusterSize) != 0)
 	{
-		 int indexForWrite = findFreeDir(&bufferDir); //olhar isso aqui "&"
-		 if (indexForWrite == FALIED_VALUE)
-			 return FALIED_VALUE;
-		 sprintf(bufferDir._dirEntry[indexForWrite].filename, "%s", name);
-		 bufferDir._dirEntry[indexForWrite].firstBlock = findFreeCluster();
-		 bufferDir._dirEntry[indexForWrite].type = isFolder;
-		 fseek(FATDisk, adress * totalCountCluster, SEEK_SET);
-		 fwrite(bufferDir._dirEntry, sizeof(dirEntry), DIRMaxCountEntry, FATDisk);
+		int indexForWrite = findFreeDir(&bufferDir); //olhar isso aqui "&"
+		if (indexForWrite == FALIED_VALUE)
+			return FALIED_VALUE;
+		sprintf(bufferDir._dirEntry[indexForWrite].filename, "%s", name);
+		bufferDir._dirEntry[indexForWrite].firstBlock = findFreeCluster();
+		bufferDir._dirEntry[indexForWrite].type = isFolder;
+		fseek(FATDisk, adress * totalCountCluster, SEEK_SET);
+		fwrite(bufferDir._dirEntry, sizeof(dirEntry), DIRMaxCountEntry, FATDisk);
 	}
-	else 
+	else
 	{
-		/*dirEntry startDIREntry[DIRMaxCountEntry];
-		for (int i = 0; i < DIRMaxCountEntry; i++) {
-			sprintf(startDIREntry[i].filename, "%s", "NULL");
-		}*/
-		/*fwrite(startDIREntry, sizeof(dirEntry), DIRMaxCountEntry, FATDisk);
-		fseek(FATDisk, adress, SEEK_SET);*/
-		//clearBuffer();
-		//fread(bufferDir._dirEntry, sizeof(dirEntry), DIRMaxCountEntry, FATDisk);
-
 		sprintf(bufferDir._dirEntry[0].filename, "%s", name);
 		bufferDir._dirEntry[0].firstBlock = findFreeCluster();
 		bufferDir._dirEntry[0].type = isFolder;
@@ -141,6 +126,11 @@ uint16_t loadAvaliableDIrEntry(char directory[])
 	if (strlen(directory) == 0)
 		return StartRootDIR / totalCountCluster;
 	else {
+		FILE* FATDisk = fopen(FATDiskName, "r+b");
+		if (FATDisk == NULL) {
+			fprintf(stderr, "Falha ao abrir o disco");
+			return FALIED_VALUE;
+		}
 		char** directoryReady = splitString(directory, '/');
 		int controle = 0;
 		int index = 0;
@@ -164,24 +154,29 @@ uint16_t loadAvaliableDIrEntry(char directory[])
 				return NULL; //diretorio não encontrado
 			index++;
 		}
+		fclose(FATDisk);
 		return currentAdress;
 	}
 }
 
- //Função de passagem de valores do Disco para a tabela Fat
-int loadFat(){
-	
-	fseek(FATDisk,StartFAT,SEEK_SET);
-	fread(tableFAT,sizeof(FATEntry),tableFATSize,FATDisk);
+//Função de passagem de valores do Disco para a tabela Fat
+int loadFat() {
+
+	FILE* FATDisk = fopen(FATDiskName, "r+b");
+	if (FATDisk == NULL) {
+		fprintf(stderr, "Falha ao abrir o disco");
+		return FALIED_VALUE;
+	}
+	fseek(FATDisk, StartFAT, SEEK_SET);
+	fread(tableFAT, sizeof(FATEntry), tableFATSize, FATDisk);
 	fclose(FATDisk);
-	//printFat();
 	return SUCCESSFUL_VALUE;
 }
 
 uint16_t findFreeCluster()
 {
 	uint16_t adress;
-	for (int i = 10; i < tableFATSize; i++) 
+	for (int i = 10; i < tableFATSize; i++)
 	{
 		if (tableFAT[i].entry == freeClusterValue)
 		{
@@ -196,7 +191,7 @@ uint16_t findFreeCluster()
 int findFreeDir(dataCluster* bufferDIR)
 {
 	for (int i = 0; i < DIRMaxCountEntry; i++) {
-		if (memcmp(&(bufferDIR->_dirEntry[i]), freeDir,dirEntrySize) == 0 || strcmp(bufferDIR->_dirEntry[i].filename, "NULL") == 0)
+		if (memcmp(&(bufferDIR->_dirEntry[i]), freeDir, dirEntrySize) == 0 || strcmp(bufferDIR->_dirEntry[i].filename, "NULL") == 0)
 			return i;
 	}
 
@@ -206,6 +201,11 @@ int findFreeDir(dataCluster* bufferDIR)
 int loadRootDir()
 {
 
+	FILE* FATDisk = fopen(FATDiskName, "r+b");
+	if (FATDisk == NULL) {
+		fprintf(stderr, "Falha ao abrir o disco");
+		return FALIED_VALUE;
+	}
 	fseek(FATDisk, StartRootDIR, SEEK_SET);
 	fread(bufferRootDir, sizeof(dirEntry), DIRMaxCountEntry, FATDisk);
 	fclose(FATDisk);
@@ -214,10 +214,14 @@ int loadRootDir()
 
 int writeDataOnDisk(dataCluster buffer[], int countBuffer, char directory[], char arqName[])
 {
-	
 	uint16_t adress = loadAvaliableDIrEntry(directory);
 	if (adress == NULL)
 		return FALIED_VALUE;
+	FILE* FATDisk = fopen(FATDiskName, "r+b");
+	if (FATDisk == NULL) {
+		fprintf(stderr, "Falha ao abrir o disco");
+		return FALIED_VALUE;
+	}
 	fseek(FATDisk, adress * totalCountCluster, SEEK_SET);
 	clearBuffer();
 	fread(bufferDir._dirEntry, sizeof(dirEntry), DIRMaxCountEntry, FATDisk);
@@ -230,8 +234,10 @@ int writeDataOnDisk(dataCluster buffer[], int countBuffer, char directory[], cha
 	fseek(FATDisk, adress * totalCountCluster, SEEK_SET);
 	fwrite(bufferDir._dirEntry, sizeof(dirEntry), DIRMaxCountEntry, FATDisk);
 	uint16_t adressFAT = bufferDir._dirEntry[indexForWrite].firstBlock;
+	fseek(FATDisk, adressFAT * totalCountCluster, SEEK_SET);
+	fwrite(buffer[0].data, clusterSize, 1, FATDisk);
 	tableFAT[adressFAT].entry = endCluster;
-	for (int i = 0; i < countBuffer; i++) //laço de repetição para alocar os blocos de dados seguintes
+	for (int i = 1; i < countBuffer; i++) //laço de repetição para alocar os blocos de dados seguintes
 	{
 		tableFAT[adressFAT].entry = findFreeCluster();
 		fseek(FATDisk, tableFAT[adressFAT].entry * totalCountCluster, SEEK_SET);
@@ -241,16 +247,79 @@ int writeDataOnDisk(dataCluster buffer[], int countBuffer, char directory[], cha
 	}
 	fclose(FATDisk);
 	return SUCCESSFUL_VALUE;
-		
+
 }
-	
+
+int appendDataOnDisk(dataCluster buffer[], int countBuffer, char directory[], char arqName[])
+{
+	FILE* FATDisk = fopen(FATDiskName, "r+b");
+	if (FATDisk == NULL) {
+		fprintf(stderr, "Falha ao abrir o disco");
+		return FALIED_VALUE;
+	}
+	uint16_t adress = loadAvaliableDIrEntry(directory);
+	if (adress == NULL)
+		return FALIED_VALUE;
+	fseek(FATDisk, adress * totalCountCluster, SEEK_SET);
+	clearBuffer();
+	fread(bufferDir._dirEntry, sizeof(dirEntry), DIRMaxCountEntry, FATDisk);
+	int indexForWrite;
+	for (indexForWrite = 0; indexForWrite < DIRMaxCountEntry; indexForWrite++) {
+		if (strcmp(bufferDir._dirEntry[indexForWrite].filename, arqName) == 0)
+			break;
+	}
+	uint16_t FATAdress = bufferDir._dirEntry[indexForWrite].firstBlock;
+	while (tableFAT[FATAdress].entry != endCluster)
+	{
+		FATAdress = tableFAT[FATAdress].entry;
+	}
+	fseek(FATDisk, FATAdress * totalCountCluster, SEEK_SET);
+	fread(bufferData.data, clusterSize, 1, FATDisk);
+	int lengthOfData = strlen(bufferData.data);
+	int lengthOfbuffer = strlen(buffer[0].data);
+	int indexOfBuffer = 0;
+
+	if (lengthOfData + lengthOfbuffer <= clusterSize)
+	{
+		strcat(bufferData.data, buffer[indexOfBuffer].data);
+		fseek(FATDisk, FATAdress * totalCountCluster, SEEK_SET);
+		fwrite(bufferData.data, clusterSize, 1, FATDisk);
+	}
+	else
+	{
+		tableFAT[FATAdress].entry = findFreeCluster();
+		fseek(FATDisk, tableFAT[FATAdress].entry * totalCountCluster, SEEK_SET);
+		fwrite(buffer[indexOfBuffer].data, clusterSize, 1, FATDisk);
+		FATAdress = tableFAT[FATAdress].entry;
+	}
+	for (indexOfBuffer = 1; indexOfBuffer < countBuffer; indexOfBuffer++)
+	{
+		tableFAT[FATAdress].entry = endCluster;
+		tableFAT[FATAdress].entry = findFreeCluster();
+		fseek(FATDisk, tableFAT[FATAdress].entry * totalCountCluster, SEEK_SET);
+		fwrite(buffer[indexOfBuffer].data, clusterSize, 1, FATDisk);
+		FATAdress = tableFAT[FATAdress].entry;
+	}
+	tableFAT[FATAdress].entry = endCluster;
+	fclose(FATDisk);
+
+	return SUCCESSFUL_VALUE;
+}
+
 
 int createNewFile(char directory[], char arqName[])
 {
 	uint16_t adress = loadAvaliableDIrEntry(directory);
+	if (adress == NULL)
+		return FALIED_VALUE;
+	FILE* FATDisk = fopen(FATDiskName, "r+b");
+	if (FATDisk == NULL) {
+		fprintf(stderr, "Falha ao abrir o disco");
+		return FALIED_VALUE;
+	}
 	fseek(FATDisk, adress * totalCountCluster, SEEK_SET);
 	clearBuffer();
-	
+
 	fread(bufferDir._dirEntry, sizeof(dirEntry), DIRMaxCountEntry, FATDisk);
 	int indexForWrite = findFreeDir(&bufferDir);
 	if (indexForWrite == FALIED_VALUE)
@@ -258,12 +327,11 @@ int createNewFile(char directory[], char arqName[])
 	else {
 		tableFAT[adress].entry = endCluster;
 		sprintf(bufferDir._dirEntry[indexForWrite].filename, "%s", arqName);
-		//bufferDir._dirEntry[indexForWrite].size = sizeof(dataCluster) * countBuffer;
 		bufferDir._dirEntry[indexForWrite].type = isFile;
 		bufferDir._dirEntry[indexForWrite].firstBlock = findFreeCluster();
+		tableFAT[bufferDir._dirEntry[indexForWrite].firstBlock].entry = endCluster;
 		fseek(FATDisk, adress * totalCountCluster, SEEK_SET);
 		fwrite(bufferDir._dirEntry, sizeof(dirEntry), DIRMaxCountEntry, FATDisk);
-		//fseek(FATDisk, bufferDir._dirEntry[indexForWrite].firstBlock * totalCountCluster, SEEK_SET);
 	}
 	fclose(FATDisk);
 	return SUCCESSFUL_VALUE;
@@ -292,27 +360,26 @@ int writeDirOnDisk(char directory[], char name[])
 
 int deleteEntryOnDisk(char directory[], char arqName[])
 {
-
-	printf("\nqtd caracteres: %d\n", strlen(directory));
-	printf("ajazxaduhj");
 	uint16_t adress = loadAvaliableDIrEntry(directory);
-	/*if (adress == NULL)
-		return FALIED_VALUE;*/
+	if (adress == NULL) {
+		return FALIED_VALUE;
+	}
+	FILE* FATDisk = fopen(FATDiskName, "r+b");
+	if (FATDisk == NULL) {
+		fprintf(stderr, "Falha ao abrir o disco");
+		return FALIED_VALUE;
+	}
 	fseek(FATDisk, adress * totalCountCluster, SEEK_SET);
 	clearBuffer();
 	fread(bufferDir._dirEntry, sizeof(dirEntry), DIRMaxCountEntry, FATDisk);
 	int indiceDirEntry;
 	for (indiceDirEntry = 0; indiceDirEntry < DIRMaxCountEntry; indiceDirEntry++)
 	{
-		printf("primeiro for");
 		if (strcmp(bufferDir._dirEntry[indiceDirEntry].filename, arqName) == 0)
 			break;
 	}
 	uint16_t FATAdress = bufferDir._dirEntry[indiceDirEntry].firstBlock;
-	memset(&(bufferDir._dirEntry[indiceDirEntry]), freeDir, sizeof(dirEntry));
-	/*sprintf(bufferDir._dirEntry[indiceDirEntry].filename, "%s", "NULL");
-	bufferDir._dirEntry[indiceDirEntry].size = -1;
-	bufferDir._dirEntry[indiceDirEntry].type = -1;*/
+	memcpy(&(bufferDir._dirEntry[indiceDirEntry]), freeDir, sizeof(dirEntry));
 	uint16_t lastFATAdress;
 	while (tableFAT[FATAdress].entry != endCluster)
 	{
@@ -321,9 +388,9 @@ int deleteEntryOnDisk(char directory[], char arqName[])
 		tableFAT[lastFATAdress].entry = freeClusterValue;
 	}
 	tableFAT[FATAdress].entry = freeClusterValue;
-	//bufferDir._dirEntry[indiceDirEntry].firstBlock = -1;
 	fseek(FATDisk, adress * totalCountCluster, SEEK_SET);
 	fwrite(bufferDir._dirEntry, sizeof(dirEntry), DIRMaxCountEntry, FATDisk);
+	fclose(FATDisk);
 	return SUCCESSFUL_VALUE;
 }
 
@@ -336,6 +403,13 @@ int deleteDirOnDisk(char directory[], char dirName[])
 	strcat(FullDIR, dirName);
 
 	uint16_t adress = loadAvaliableDIrEntry(FullDIR);
+	if (adress == FALIED_VALUE)
+		return FALIED_VALUE;
+	FILE* FATDisk = fopen(FATDiskName, "r+b");
+	if (FATDisk == NULL) {
+		fprintf(stderr, "Falha ao abrir o disco");
+		return FALIED_VALUE;
+	}
 	int indexDirAndress;
 
 	fseek(FATDisk, adress * totalCountCluster, SEEK_SET);
@@ -361,7 +435,7 @@ int deleteDirOnDisk(char directory[], char dirName[])
 	bufferDir._dirEntry[indexDirAndress].type = -1;*/
 	uint16_t FATAdress = adress + indexDirAndress;
 	memcpy(&(bufferDir._dirEntry[indexDirAndress]), freeDir, sizeof(dirEntry));
-	if(memcmp(bufferDir._dirEntry, freeCluster, clusterSize) == 0)
+	if (memcmp(bufferDir._dirEntry, freeCluster, clusterSize) == 0)
 		tableFAT[FATAdress].entry = freeClusterValue;
 	//bufferDir._dirEntry[indexDirAndress].firstBlock = -1;
 	fseek(FATDisk, adress * totalCountCluster, SEEK_SET);
@@ -375,6 +449,11 @@ dataCluster* readDataOnDisk(char directory[], char arqName[])
 	uint16_t adress = loadAvaliableDIrEntry(directory);
 	if (adress == NULL)
 		return FALIED_VALUE;
+	FILE* FATDisk = fopen(FATDiskName, "r+b");
+	if (FATDisk == NULL) {
+		fprintf(stderr, "Falha ao abrir o disco");
+		return FALIED_VALUE;
+	}
 	fseek(FATDisk, adress * totalCountCluster, SEEK_SET);
 	clearBuffer();
 	fread(bufferDir._dirEntry, sizeof(dirEntry), DIRMaxCountEntry, FATDisk);
@@ -385,7 +464,7 @@ dataCluster* readDataOnDisk(char directory[], char arqName[])
 			break;
 	}
 	int TAMOfBuffer = 5;
-	dataCluster* buffer = (dataCluster*)calloc(TAMOfBuffer,sizeof(dataCluster));
+	dataCluster* buffer = (dataCluster*)calloc(TAMOfBuffer, sizeof(dataCluster));
 	uint16_t FATAdress = bufferDir._dirEntry[indexDirAndress].firstBlock;
 	fseek(FATDisk, FATAdress * totalCountCluster, SEEK_SET);
 	fread(bufferData.data, clusterSize, 1, FATDisk);
@@ -399,7 +478,7 @@ dataCluster* readDataOnDisk(char directory[], char arqName[])
 		fread(bufferData.data, clusterSize, 1, FATDisk);
 		memcpy(buffer[bufferIndex].data, bufferData.data, clusterSize);
 		bufferIndex++;
-		if(bufferIndex == TAMOfBuffer)
+		if (bufferIndex == TAMOfBuffer)
 		{
 			TAMOfBuffer = TAMOfBuffer * 2;
 			buffer = realloc(buffer, TAMOfBuffer);
@@ -414,11 +493,16 @@ int showAllDirEntrys(char directory[])
 	uint16_t adress = loadAvaliableDIrEntry(directory);
 	if (adress == NULL)
 		return FALIED_VALUE;
+	FILE* FATDisk = fopen(FATDiskName, "r+b");
+	if (FATDisk == NULL) {
+		fprintf(stderr, "Falha ao abrir o disco");
+		return FALIED_VALUE;
+	}
 	fseek(FATDisk, adress * totalCountCluster, SEEK_SET);
 	clearBuffer();
 	fread(bufferDir._dirEntry, sizeof(dirEntry), DIRMaxCountEntry, FATDisk);
 	printf("\n");
-	for (int i = 0; i < DIRMaxCountEntry; i++) 
+	for (int i = 0; i < DIRMaxCountEntry; i++)
 	{
 		if (strlen(bufferDir._dirEntry[i].filename) > 0 && strcmp(bufferDir._dirEntry[i].filename, "NULL") != 0) {
 			printf("%s", bufferDir._dirEntry[i].filename);
@@ -432,52 +516,35 @@ int showAllDirEntrys(char directory[])
 }
 
 //Função de impressão da Table Fat
-void printFat(){
+void printFat() {
 	for (int i = 0; i < tableFATSize; i++)
 	{
 		printf(" %x ", tableFAT[i].entry);
 		if (i % 6 == 0)
 			printf("\n");
 	}
-	
+
 }
 
-//int main()
-//{
-//	int result;
-//	printf("\nEntrei\n");
+//int main() {
 //	createNewVirtualFATDisk();
-//	//loadFat();
-//	writeDirOnDisk("/root", "recursos");
-//	//writeDirOnDisk("/root", "dirteste");
-//	//writeDirOnDisk("/root/recursos", "profundidade");
-//	//showAllDirEntrys("/root");
-//	//deleteDirOnDisk("/root/recursos", "profundidade");
-//	//showAllDirEntrys("/root/recursos");
-//	dataCluster* teste = (dataCluster*)calloc(2, sizeof(dataCluster));
-//	char* testeDeArquivo = "testandoEscritaDeArquivo";
-//	memcpy(teste[0].data, testeDeArquivo, 24);
-//	memcpy(teste[1].data, testeDeArquivo, 24);
-//	createNewFile("/root/recursos", "teste.txt");
-//	writeDataOnDisk(teste, 2, "/root/recursos", "teste.txt");
-//	deleteEntryOnDisk("/root/recursos", "teste.txt");
-//	showAllDirEntrys("/root/recursos");
-//	printf("Feito");
-//	return 0;
-//
+//	createNewFile("/root", "file");
+//	dataCluster* teste = (dataCluster*)calloc(1, sizeof(dataCluster));
+//		char* testeDeArquivo = "testandoEscritaDeArquivo";
+//		memcpy(teste[0].data, testeDeArquivo, 24);
+//		writeDataOnDisk(teste, 1, "/root", "file");
+//		appendDataOnDisk(teste, 1, "/root", "file");
 //}
 
 int main() {
 	currentDirectory = (char*)calloc(256, sizeof(char));
-	sprintf(currentDirectory, "%s", "/root ");
+	sprintf(currentDirectory, "%s", "/root/");
 	while (1)
 	{
 		char* input = readInput();
 		char** inputs;
 		inputs = splitString(input, ' ');
 		int result;
-		printf("\nO que está no 0: %s\n", inputs[0]);
-		printf("\nO que está no 1: %s\n", inputs[1]);
 		if (strcmp(inputs[0], "init") == 0)
 		{
 			result = createNewVirtualFATDisk();
@@ -486,93 +553,95 @@ int main() {
 			else
 				printf("\nFalha ao criar uma nova partição virtual :c\n");
 		}
+		else if (strcmp(inputs[0], "load") == 0)
+		{
+			result = load();
+			if (result == FALIED_VALUE)
+				printf("\nNão foi possível carregar o disco. Verifique se existe um disco virtual já criado.\n");
+		}
 		else if (strcmp(inputs[0], "ls") == 0)
 		{
-			result = showAllDirEntrys(currentDirectory);
-			if (result == FALIED_VALUE)
-				printf("\nO diretório informado não existe\n");
-			persisOnDisk();
+				result = showAllDirEntrys(inputs[1]);
+				if(result == FALIED_VALUE)
+					printf("\nO diretório informado não existe\n");
+
 		}
 		else if (strcmp(inputs[0], "mkdir") == 0)
 		{
-			char** readyDIR = splitString(inputs[1], '/');
-			char* folderName = (char*)calloc(256, sizeof(char));
+			char** readyDIR;
+			char* folderName;
+			folderName = (char*)calloc(256, sizeof(char));
 			int index = 0;
-			while (readyDIR[index] != 0)
-			{
-				index++;
-				printf("\nindex: %s\n", readyDIR[index]);
-			}
-			index--;
-			sprintf(folderName, "%s", readyDIR[index]);
-			printf("\nFolder name: %s\n", folderName);
-			subString(inputs[1], folderName);
-			printf("\nSubstring: %s\n", inputs[1]);
-			result = createNewDirEntry(inputs[1], folderName);
+				readyDIR = splitString(inputs[1], '/');
+				while (readyDIR[index] != 0)
+				{
+					index++;
+				}
+				index--;
+				sprintf(folderName, "%s", readyDIR[index]);
+				subString(inputs[1], folderName);
+				printf("\nChamei a func\n");
+				result = createNewDirEntry(inputs[1], folderName);
 			if (result == FALIED_VALUE)
-				printf("\nNão foi possível criar o diretório. Ele pode não existe ou você pode estar sem espaço em disco");
-			persisOnDisk();
-			/*free(readyDIR);
-			free(folderName);*/
+				printf("\nNão foi possível criar o diretório. O diretório de criação pode não existir ou você pode estar sem espaço em disco");
+			free(readyDIR);
+			free(folderName);
 		}
 		else if (strcmp(inputs[0], "create") == 0)
 		{
-			char** readyDIR = splitString(inputs[1], '/');
-			char* arqName = (char*)calloc(256, sizeof(char));
+			char** readyDIR;
+			char* arqName;
+			arqName = (char*)calloc(256, sizeof(char));
 			int index = 0;
-			while (readyDIR[index] != 0)
-			{
-				index++;
-			}
-			index--;
-			sprintf(arqName, "%s", readyDIR[index]);
-			subString(inputs[1], arqName);
-			printf("\narqName: %s\n", arqName);
-			printf("\ndir: %s\n", inputs[1]);
-			result = createNewFile(inputs[1], arqName);
+				readyDIR = splitString(inputs[1], '/');
+				while (readyDIR[index] != 0)
+				{
+					index++;
+				}
+				index--;
+				sprintf(arqName, "%s", readyDIR[index]);
+				subString(inputs[1], arqName);
+				result = createNewFile(inputs[1], arqName);
 			if (result == FALIED_VALUE)
-				printf("\nNão foi possível criar o arquivo. O diretório informado não existe ou não existe espaço em disco disponível");
-			persisOnDisk();
+				printf("\nNão foi possível criar o arquivo. O diretório de criação pode não existir ou você pode estar sem espaço em disco");
 			free(readyDIR);
 			free(arqName);
 		}
 		else if (strcmp(inputs[0], "unlink") == 0)
 		{
-			char** readyDIR = splitString(inputs[1], '/');
-			char* arqName = (char*)calloc(256, sizeof(char));
+			char** readyDIR;
+			char* arqName;
+			arqName = (char*)calloc(256, sizeof(char));
 			int index = 0;
-			while (readyDIR[index] != 0)
-			{
-				index++;
-			}
-			index--;
-			sprintf(arqName, "%s", readyDIR[index]);
-			subString(inputs[1], arqName);
-			printf("\narqName: %s\n", arqName);
-			printf("\ndir: %s\n", inputs[1]);
-			result = deleteEntryOnDisk(inputs[1], arqName);
+				readyDIR = splitString(inputs[1], '/');
+				while (readyDIR[index] != 0)
+				{
+					index++;
+				}
+				index--;
+				sprintf(arqName, "%s", readyDIR[index]);
+				subString(inputs[1], arqName);
+				result = deleteEntryOnDisk(inputs[1], arqName);
 			if (result == FALIED_VALUE)
-				printf("\nNão foi possível deletar o arquivo. O diretório informado não existe\n");
-			persisOnDisk();
+				printf("\nNão foi possível excluir o arquivo. O diretório de criação pode não existir.");
+			free(readyDIR);
+			free(arqName);
+
 		}
 		else if (strcmp(inputs[0], "write") == 0)
 		{
-			char** readyDIR = splitString(inputs[2], '/');
 			strcat(inputs[1], "\0");
-			char* arqName = (char*)calloc(256, sizeof(char));
+			char** readyDIR;
+			char* arqName;
 			int index = 0;
-			while (readyDIR[index] != 0)
-			{
-				index++;
-			}
-			index--;
-			sprintf(arqName, "%s", readyDIR[index]);
-			subString(inputs[2], arqName);
+			arqName = (char*)calloc(256, sizeof(char));
+
 			int TAMOfBuffer = 10;
 			dataCluster* buffer = (dataCluster*)calloc(TAMOfBuffer, sizeof(dataCluster));
 			index = 0;
 			int indexBuffer = 0;
 			int indexData = 0;
+
 			while (inputs[1][index] != '\0')
 			{
 				buffer[indexBuffer].data[indexData] = inputs[1][index];
@@ -589,35 +658,77 @@ int main() {
 					}
 				}
 			}
-			printf("\nAntes de chamar a função\n");
-			result = writeDataOnDisk(buffer, indexBuffer, input[2], arqName);
-			if (result == FALIED_VALUE)
-				printf("\nNão foi possível completar a operação. O arquivo não existe ou não existe espaço em disco disponível\n");
-			persisOnDisk();
+
+				readyDIR = splitString(inputs[2], '/');
+				while (readyDIR[index] != 0)
+				{
+					index++;
+				}
+				index--;
+				sprintf(arqName, "%s", readyDIR[index]);
+				subString(inputs[2], arqName);
+
+				result = writeDataOnDisk(buffer, indexBuffer, inputs[2], arqName);
+				if (result == FALIED_VALUE)
+					printf("\nNão foi possível completar a operação. O arquivo não existe ou não existe espaço em disco disponível\n");
+		
+			
+			free(readyDIR);
+			free(arqName);
 		}
-		else if (strcmp(inputs[0], "read") == 0)
+		else if (strcmp(inputs[0], "append") == 0)
 		{
-			char** readyDIR = splitString(inputs[1], '/');
-			char* arqName = (char*)calloc(256, sizeof(char));
-			int index = 0;
-			while (readyDIR[index] != 0)
+		strcat(inputs[1], "\0");
+		char** readyDIR;
+		char* arqName;
+		int index = 0;
+		arqName = (char*)calloc(256, sizeof(char));
+
+		int TAMOfBuffer = 10;
+		dataCluster* buffer = (dataCluster*)calloc(TAMOfBuffer, sizeof(dataCluster));
+		index = 0;
+		int indexBuffer = 0;
+		int indexData = 0;
+
+		while (inputs[1][index] != '\0')
+		{
+			buffer[indexBuffer].data[indexData] = inputs[1][index];
+			index++;
+			indexData++;
+			if (indexData >= 1024)
 			{
-				index++;
+				indexBuffer++;
+				indexData = 0;
+				if (indexBuffer >= TAMOfBuffer)
+				{
+					TAMOfBuffer = TAMOfBuffer * 2;
+					buffer = realloc(buffer, TAMOfBuffer);
+				}
 			}
-			index--;
-			sprintf(arqName, "%s", readyDIR[index]);
-			subString(inputs[1], arqName);
-			dataCluster* buffer = readDataOnDisk(inputs[1], arqName);
-			index = 0;
-			while (memcmp(buffer[index].data, freeCluster, clusterSize) != 0) {
-				printf("%s", buffer[index].data);
-				index++;
-			}
-			persisOnDisk();
+		}
+
+		readyDIR = splitString(inputs[2], '/');
+		while (readyDIR[index] != 0)
+		{
+			index++;
+		}
+		index--;
+		sprintf(arqName, "%s", readyDIR[index]);
+		subString(inputs[2], arqName);
+
+		result = appendDataOnDisk(buffer, indexBuffer, inputs[2], arqName);
+		if (result == FALIED_VALUE)
+			printf("\nNão foi possível completar a operação. O arquivo não existe ou não existe espaço em disco disponível\n");
+
+
+		free(readyDIR);
+		free(arqName);
 		}
 		else {
 			printf("\nComando não encontrado\n");
 		}
+		free(input);
+		free(inputs);
 	}
 	return 0;
 }

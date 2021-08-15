@@ -22,6 +22,7 @@
 
 #ifndef _KEYMAPS_H_
 #define _KEYMAPS_H_
+#define READLINE_LIBRARY
 
 #ifdef __cplusplus
 extern "C" {
