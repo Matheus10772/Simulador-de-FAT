@@ -358,7 +358,7 @@ int createNewFile(char directory[], char arqName[])
 		bufferDir._dirEntry[indexForWrite].firstBlock = endCluster;
 		/*if (bufferDir._dirEntry[indexForWrite].firstBlock == FALIED_VALUE)
 			return FALIED_VALUE;*/
-		//tableFAT[bufferDir._dirEntry[indexForWrite].firstBlock].entry = endCluster;
+			//tableFAT[bufferDir._dirEntry[indexForWrite].firstBlock].entry = endCluster;
 		fseek(FATDisk, adress * totalCountCluster, SEEK_SET);
 		fwrite(bufferDir._dirEntry, sizeof(dirEntry), DIRMaxCountEntry, FATDisk);
 	}
@@ -368,7 +368,7 @@ int createNewFile(char directory[], char arqName[])
 
 int replaceDataOnDisk(dataCluster buffer[], int countBuffer, char directory[], char arqName[])
 {
-	
+
 	int result = deleteEntryOnDisk(directory, arqName);
 	if (result == FALIED_VALUE)
 		return FALIED_VALUE;
@@ -392,7 +392,7 @@ int deleteEntryOnDisk(char directory[], char arqName[])
 {
 	printf("\ndirectory: %s\n", directory);
 	printf("\narqnmae: %s\n", arqName);
-	
+
 	uint16_t adress = loadAvaliableDIrEntry(directory);
 	if (adress == FALIED_VALUE) {
 		return FALIED_VALUE;
@@ -601,9 +601,9 @@ int main() {
 		}
 		else if (strcmp(inputs[0], "ls") == 0)
 		{
-				result = showAllDirEntrys(inputs[1]);
-				if(result == FALIED_VALUE)
-					printf("\nO diretório informado não existe\n");
+			result = showAllDirEntrys(inputs[1]);
+			if (result == FALIED_VALUE)
+				printf("\nO diretório informado não existe\n");
 
 		}
 		else if (strcmp(inputs[0], "mkdir") == 0)
@@ -611,31 +611,25 @@ int main() {
 			char** readyDIR;
 			char* folderName;
 			folderName = (char*)calloc(256, sizeof(char));
-			int index = 0;
-				readyDIR = splitString(inputs[1], '/');
-				while (readyDIR[index] != 0)
-				{
-					printf("\nReadydir: %s\n", readyDIR[index]);
-					printf("\nindex: %d\n", index);
-					index++;
-				}
-				index = index - 1;
-				printf("\nindex: %d\n", index);
-				printf("\nfolder name:%c-\n", readyDIR[index][0]);
-				if (readyDIR[index] == 0) {
-					index = index - 1;
-					printf("\nindex: %d\n", index);
-				}
-				printf("\nfolder name:%c-\n", readyDIR[index][0]);
-				sprintf(folderName, "%s", readyDIR[index]);
-				if (index > 0) {
-					subString(inputs[1], folderName);
-				}
-				else {
-					sprintf(inputs[1], "%s", "/");
-				}
-				printf("\nChamei a func\n");
-				result = createNewDirEntry(inputs[1], folderName);
+			int i = 0;
+			if (strcmp(&(inputs[1][strlen(inputs[1]) - 1]), "/") == 0)
+			{
+				inputs[1][strlen(inputs[1]) - 1] = 0;
+			}
+			readyDIR = splitString(inputs[1], '/');
+			while (readyDIR[i] != 0)
+			{
+				i++;
+			}
+			--i;
+			sprintf(folderName, "%s", readyDIR[i]);
+			if (i > 0) {
+				subString(inputs[1], folderName);
+			}
+			else {
+				sprintf(inputs[1], "%s", "/");
+			}
+			result = createNewDirEntry(inputs[1], folderName);
 			if (result == FALIED_VALUE)
 				printf("\nNão foi possível criar o diretório. O diretório de criação pode não existir ou você pode estar sem espaço em disco");
 			free(readyDIR);
@@ -647,20 +641,24 @@ int main() {
 			char* arqName;
 			arqName = (char*)calloc(256, sizeof(char));
 			int index = 0;
-				readyDIR = splitString(inputs[1], '/');
-				while (readyDIR[index] != 0)
-				{
-					index++;
-				}
-				index--;
-				sprintf(arqName, "%s", readyDIR[index]);
-				if (index > 0) {
-					subString(inputs[1], arqName);
-				}
-				else {
-					sprintf(inputs[1], "%s", "/");
-				}
-				result = createNewFile(inputs[1], arqName);
+			if (strcmp(&(inputs[1][strlen(inputs[1]) - 1]), "/") == 0)
+			{
+				inputs[1][strlen(inputs[1]) - 1] = 0;
+			}
+			readyDIR = splitString(inputs[1], '/');
+			while (readyDIR[index] != 0)
+			{
+				index++;
+			}
+			index--;
+			sprintf(arqName, "%s", readyDIR[index]);
+			if (index > 0) {
+				subString(inputs[1], arqName);
+			}
+			else {
+				sprintf(inputs[1], "%s", "/");
+			}
+			result = createNewFile(inputs[1], arqName);
 			if (result == FALIED_VALUE)
 				printf("\nNão foi possível criar o arquivo. O diretório de criação pode não existir ou você pode estar sem espaço em disco");
 			free(readyDIR);
@@ -672,20 +670,24 @@ int main() {
 			char* arqName;
 			arqName = (char*)calloc(256, sizeof(char));
 			int index = 0;
-				readyDIR = splitString(inputs[1], '/');
-				while (readyDIR[index] != 0)
-				{
-					index++;
-				}
-				index--;
-				sprintf(arqName, "%s", readyDIR[index]);
-				if (index > 0) {
-					subString(inputs[1], arqName);
-				}
-				else {
-					sprintf(inputs[1], "%s", "/");
-				}
-				result = deleteEntryOnDisk(inputs[1], arqName);
+			if (strcmp(&(inputs[1][strlen(inputs[1]) - 1]), "/") == 0)
+			{
+				inputs[1][strlen(inputs[1]) - 1] = 0;
+			}
+			readyDIR = splitString(inputs[1], '/');
+			while (readyDIR[index] != 0)
+			{
+				index++;
+			}
+			index--;
+			sprintf(arqName, "%s", readyDIR[index]);
+			if (index > 0) {
+				subString(inputs[1], arqName);
+			}
+			else {
+				sprintf(inputs[1], "%s", "/");
+			}
+			result = deleteEntryOnDisk(inputs[1], arqName);
 			if (result == FALIED_VALUE)
 				printf("\nNão foi possível excluir o arquivo. O diretório de criação pode não existir.");
 			free(readyDIR);
@@ -722,81 +724,125 @@ int main() {
 					}
 				}
 			}
+			if (strcmp(&(inputs[2][strlen(inputs[2]) - 1]), "/") == 0)
+			{
+				inputs[2][strlen(inputs[2]) - 1] = 0;
+			}
+			readyDIR = splitString(inputs[2], '/');
+			while (readyDIR[index] != '\0')
+			{
+				index++;
+			}
+			index--;
+			printf("\nindex: %d\n", index);
+			sprintf(arqName, "%s", readyDIR[index - 1]);
+			if (index > 0) {
+				subString(inputs[2], arqName);
+			}
+			else {
+				sprintf(inputs[2], "%s", "/");
+			}
 
-				readyDIR = splitString(inputs[2], '/');
-				while (readyDIR[index] != 0)
-				{
-					index++;
-				}
-				index--;
-				sprintf(arqName, "%s", readyDIR[index]);
-				if (index > 0) {
-					subString(inputs[2], arqName);
-				}
-				else {
-					sprintf(inputs[2], "%s", "/");
-				}
+			result = writeDataOnDisk(buffer, indexBuffer, inputs[2], arqName);
+			if (result == FALIED_VALUE)
+				printf("\nNão foi possível completar a operação. O arquivo não existe ou não existe espaço em disco disponível\n");
 
-				result = writeDataOnDisk(buffer, indexBuffer, inputs[2], arqName);
-				if (result == FALIED_VALUE)
-					printf("\nNão foi possível completar a operação. O arquivo não existe ou não existe espaço em disco disponível\n");
-		
-			
+
 			free(readyDIR);
 			free(arqName);
 		}
 		else if (strcmp(inputs[0], "append") == 0)
 		{
-		strcat(inputs[1], "\0");
-		char** readyDIR;
-		char* arqName;
-		int index = 0;
-		arqName = (char*)calloc(256, sizeof(char));
+			strcat(inputs[1], "\0");
+			char** readyDIR;
+			char* arqName;
+			int index = 0;
+			arqName = (char*)calloc(256, sizeof(char));
 
-		int TAMOfBuffer = 10;
-		dataCluster* buffer = (dataCluster*)calloc(TAMOfBuffer, sizeof(dataCluster));
-		index = 0;
-		int indexBuffer = 0;
-		int indexData = 0;
+			int TAMOfBuffer = 10;
+			dataCluster* buffer = (dataCluster*)calloc(TAMOfBuffer, sizeof(dataCluster));
+			index = 0;
+			int indexBuffer = 0;
+			int indexData = 0;
 
-		while (inputs[1][index] != '\0')
-		{
-			buffer[indexBuffer].data[indexData] = inputs[1][index];
-			index++;
-			indexData++;
-			if (indexData >= 1024)
+			while (inputs[1][index] != '\0')
 			{
-				indexBuffer++;
-				indexData = 0;
-				if (indexBuffer >= TAMOfBuffer)
+				buffer[indexBuffer].data[indexData] = inputs[1][index];
+				index++;
+				indexData++;
+				if (indexData >= 1024)
 				{
-					TAMOfBuffer = TAMOfBuffer * 2;
-					buffer = realloc(buffer, TAMOfBuffer);
+					indexBuffer++;
+					indexData = 0;
+					if (indexBuffer >= TAMOfBuffer)
+					{
+						TAMOfBuffer = TAMOfBuffer * 2;
+						buffer = realloc(buffer, TAMOfBuffer);
+					}
 				}
 			}
-		}
 
-		readyDIR = splitString(inputs[2], '/');
-		while (readyDIR[index] != 0)
-		{
-			index++;
-		}
-		index--;
-		sprintf(arqName, "%s", readyDIR[index]);
-		if (index > 0) {
-			subString(inputs[2], arqName);
-		}
-		else {
-			sprintf(inputs[2], "%s", "/");
-		}
+			if (strcmp(&(inputs[2][strlen(inputs[2]) - 1]), "/") == 0)
+			{
+				inputs[2][strlen(inputs[2]) - 1] = 0;
+			}
+			readyDIR = splitString(inputs[2], '/');
+			while (readyDIR[index] != 0)
+			{
+				index++;
+			}
+			index--;
+			sprintf(arqName, "%s", readyDIR[index - 1]);
+			if (index > 0) {
+				subString(inputs[2], arqName);
+			}
+			else {
+				sprintf(inputs[2], "%s", "/");
+			}
 
-		result = appendDataOnDisk(buffer, indexBuffer, inputs[2], arqName);
-		if (result == FALIED_VALUE)
-			printf("\nNão foi possível completar a operação. O arquivo não existe ou não existe espaço em disco disponível\n");
+			result = appendDataOnDisk(buffer, indexBuffer, inputs[2], arqName);
+			if (result == FALIED_VALUE)
+				printf("\nNão foi possível completar a operação. O arquivo não existe ou não existe espaço em disco disponível\n");
 
 
-		free(readyDIR);
-		free(arqName);
+			free(readyDIR);
+			free(arqName);
+		}
+		else if (strcmp(inputs[0], "read") == 0) {
+			char** readyDIR;
+			char* arqName;
+			dataCluster* buffer;
+			arqName = (char*)calloc(256, sizeof(char));
+			int index = 0;
+			if (strcmp(&(inputs[1][strlen(inputs[1]) - 1]), "/") == 0)
+			{
+				inputs[1][strlen(inputs[1]) - 1] = 0;
+			}
+			readyDIR = splitString(inputs[1], '/');
+			while (readyDIR[index] != 0)
+			{
+				index++;
+			}
+			index--;
+			sprintf(arqName, "%s", readyDIR[index]);
+			if (index > 0) {
+				subString(inputs[1], arqName);
+			}
+			else {
+				sprintf(inputs[1], "%s", "/");
+			}
+			buffer = readDataOnDisk(inputs[1], arqName);
+			if (buffer == FALIED_VALUE)
+				printf("\nNão foi possível excluir o arquivo. O diretório de criação pode não existir.");
+			else {
+				int index = 0;
+				while (buffer[index].data != 0)
+				{
+					printf("%s", buffer[index].data);
+				}
+			}
+			free(readyDIR);
+			free(arqName);
 		}
 		else {
 			printf("\nComando não encontrado\n");
