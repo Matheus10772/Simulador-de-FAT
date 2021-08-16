@@ -93,7 +93,7 @@ int createNewFile(char directory[], char arqName[]);
 int replaceDataOnDisk(dataCluster buffer[], int countBuffer, char directory[], char arqName[]);
 int writeDirOnDisk(char directory[], char name[]);
 int deleteEntryOnDisk(char directory[], char arqName[]);
-int deleteDirOnDisk(char directory[], char dirName[]);
+//int deleteDirOnDisk(char directory[], char dirName[]);
 dataCluster* readDataOnDisk(char directory[], char arqName[]);
 int showAllDirEntrys(char directory[]);
 void printFat();
