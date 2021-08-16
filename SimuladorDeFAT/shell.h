@@ -7,7 +7,7 @@
 #include <readline/readline.h>
 #include <readline/history.h>
 
-char* currentDirectory;
+char* currentdirectory;
 
 char* readInput();
 void removeCharacter(char string[], const char operator);

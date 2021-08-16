@@ -82,6 +82,7 @@ int load();
 void clearBuffer();
 char** splitString(char string[], const char operator);
 int createNewDirEntry(char dir[], char name[]);
+int checkSameName(dataCluster* bufferDIR, uint8_t type, char name[]);
 uint16_t loadAvaliableDIrEntry(char directory[]);
 uint16_t findFreeCluster();
 int findFreeDir(dataCluster* bufferDIR);
@@ -94,6 +95,6 @@ int replaceDataOnDisk(dataCluster buffer[], int countBuffer, char directory[], c
 int writeDirOnDisk(char directory[], char name[]);
 int deleteEntryOnDisk(char directory[], char arqName[]);
 //int deleteDirOnDisk(char directory[], char dirName[]);
-dataCluster* readDataOnDisk(char directory[], char arqName[]);
+int readDataOnDisk(char directory[], char arqName[]);
 int showAllDirEntrys(char directory[]);
 void printFat();

@@ -1,7 +1,6 @@
 #include "shell.h"
 
 
-
 char* readInput()
 {
 	char* line;
@@ -52,4 +51,3 @@ void subString(char string[], char target[])
 		string[i] = 0;
 	}
 }
-
