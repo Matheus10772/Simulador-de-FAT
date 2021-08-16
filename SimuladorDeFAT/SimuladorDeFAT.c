@@ -105,7 +105,7 @@ char** splitString(char string[], char operator) {//divide uma string em várias
 int createNewDirEntry(char dir[], char name[])
 {
 	uint16_t adress = loadAvaliableDIrEntry(dir);
-	if (adress == FALIED_VALUE)
+	if (adress == endCluster)
 		return FALIED_VALUE;
 	FILE* FATDisk = fopen(FATDiskName, "r+b");
 	if (FATDisk == NULL) {
@@ -115,8 +115,9 @@ int createNewDirEntry(char dir[], char name[])
 	fseek(FATDisk, adress * totalCountCluster, SEEK_SET);
 	clearBuffer();
 	fread(bufferDir._dirEntry, sizeof(dirEntry), DIRMaxCountEntry, FATDisk);
-	if (memcmp(bufferDir._dirEntry, freeCluster, clusterSize) != 0)
-	{
+	/*if (memcmp(bufferDir._dirEntry, freeCluster, clusterSize) != 0)
+	{*/
+		tableFAT[adress].entry = endCluster;
 		int indexForWrite = findFreeDir(&bufferDir);
 		int checkName = checkSameName(&bufferDir, isFolder, name);
 		if (indexForWrite == FALIED_VALUE || checkName == FALIED_VALUE)
@@ -129,7 +130,7 @@ int createNewDirEntry(char dir[], char name[])
 		bufferDir._dirEntry[indexForWrite].type = isFolder;
 		fseek(FATDisk, adress * totalCountCluster, SEEK_SET);
 		fwrite(bufferDir._dirEntry, sizeof(dirEntry), DIRMaxCountEntry, FATDisk);
-	}
+	/*}
 	else
 	{
 		tableFAT[adress].entry = endCluster;
@@ -141,7 +142,7 @@ int createNewDirEntry(char dir[], char name[])
 		bufferDir._dirEntry[0].type = isFolder;
 		fseek(FATDisk, adress * totalCountCluster, SEEK_SET);
 		fwrite(bufferDir._dirEntry, sizeof(dirEntry), DIRMaxCountEntry, FATDisk);
-	}
+	}*/
 	fclose(FATDisk);
 	return SUCCESSFUL_VALUE;
 }
@@ -174,6 +175,7 @@ uint16_t loadAvaliableDIrEntry(char directory[])
 		fseek(FATDisk, StartRootDIR, 0);
 		fread(bufferDir._dirEntry, sizeof(dirEntry), DIRMaxCountEntry, FATDisk);
 		while (directoryReady[index] != 0) {
+			controle = 0;
 			for (int i = 0; i < DIRMaxCountEntry; i++) {
 				if (memcmp(&(bufferDir._dirEntry[i]), freeDir, dirEntrySize) != 0) { //não está vazio{
 					if (strcmp(bufferDir._dirEntry[i].filename, directoryReady[index]) == 0) { //São iguais
@@ -232,20 +234,6 @@ int findFreeDir(dataCluster* bufferDIR)
 	}
 
 	return FALIED_VALUE;
-}
-
-int loadRootDir()
-{
-
-	FILE* FATDisk = fopen(FATDiskName, "r+b");
-	if (FATDisk == NULL) {
-		fprintf(stderr, "Falha ao abrir o disco");
-		return FALIED_VALUE;
-	}
-	fseek(FATDisk, StartRootDIR, SEEK_SET);
-	fread(bufferRootDir, sizeof(dirEntry), DIRMaxCountEntry, FATDisk);
-	fclose(FATDisk);
-	return SUCCESSFUL_VALUE;
 }
 
 int writeDataOnDisk(dataCluster buffer[], int countBuffer, char directory[], char arqName[])
@@ -386,9 +374,6 @@ int createNewFile(char directory[], char arqName[])
 		sprintf(bufferDir._dirEntry[indexForWrite].filename, "%s", arqName);
 		bufferDir._dirEntry[indexForWrite].type = isFile;
 		bufferDir._dirEntry[indexForWrite].firstBlock = endCluster;
-		/*if (bufferDir._dirEntry[indexForWrite].firstBlock == FALIED_VALUE)
-			return FALIED_VALUE;*/
-			//tableFAT[bufferDir._dirEntry[indexForWrite].firstBlock].entry = endCluster;
 		fseek(FATDisk, adress * totalCountCluster, SEEK_SET);
 		fwrite(bufferDir._dirEntry, sizeof(dirEntry), DIRMaxCountEntry, FATDisk);
 	}
@@ -461,55 +446,7 @@ int deleteEntryOnDisk(char directory[], char arqName[])
 	return SUCCESSFUL_VALUE;
 }
 
-//int deleteDirOnDisk(char directory[], char dirName[])
-//{
-//
-//	char* FullDIR = (char*)calloc(256, sizeof(char));
-//	strcpy(FullDIR, directory);
-//	strcat(FullDIR, "/");
-//	strcat(FullDIR, dirName);
-//
-//	uint16_t adress = loadAvaliableDIrEntry(FullDIR);
-//	if (adress == FALIED_VALUE)
-//		return FALIED_VALUE;
-//	FILE* FATDisk = fopen(FATDiskName, "r+b");
-//	if (FATDisk == NULL) {
-//		fprintf(stderr, "Falha ao abrir o disco");
-//		return FALIED_VALUE;
-//	}
-//	int indexDirAndress;
-//
-//	fseek(FATDisk, adress * totalCountCluster, SEEK_SET);
-//	clearBuffer();
-//	fread(bufferDir._dirEntry, sizeof(dirEntry), DIRMaxCountEntry, FATDisk);
-//	for (indexDirAndress = 0; indexDirAndress < DIRMaxCountEntry; indexDirAndress++)
-//	{
-//		if (memcmp(&(bufferDir._dirEntry[indexDirAndress]), freeDir, sizeof(dirEntry)) != 0 && strcmp(bufferDir._dirEntry[indexDirAndress].filename, "NULL") != 0)
-//			return FALIED_VALUE;
-//	}
-//
-//	adress = loadAvaliableDIrEntry(directory);
-//	fseek(FATDisk, adress * totalCountCluster, SEEK_SET);
-//	clearBuffer();
-//	fread(bufferDir._dirEntry, sizeof(dirEntry), DIRMaxCountEntry, FATDisk);
-//	for (indexDirAndress = 0; indexDirAndress < DIRMaxCountEntry; indexDirAndress++)
-//	{
-//		if (strcmp(bufferDir._dirEntry[indexDirAndress].filename, dirName) == 0)
-//			break;
-//	}
-//
-//	/*sprintf(bufferDir._dirEntry[indexDirAndress].filename, "%s", "NULL");
-//	bufferDir._dirEntry[indexDirAndress].type = -1;*/
-//	uint16_t FATAdress = adress + indexDirAndress;
-//	memcpy(&(bufferDir._dirEntry[indexDirAndress]), freeDir, sizeof(dirEntry));
-//	if (memcmp(bufferDir._dirEntry, freeCluster, clusterSize) == 0)
-//		tableFAT[FATAdress].entry = freeClusterValue;
-//	//bufferDir._dirEntry[indexDirAndress].firstBlock = -1;
-//	fseek(FATDisk, adress * totalCountCluster, SEEK_SET);
-//	fwrite(bufferDir._dirEntry, sizeof(dirEntry), DIRMaxCountEntry, FATDisk);
-//	fclose(FATDisk);
-//	return SUCCESSFUL_VALUE;
-//}
+
 
 int readDataOnDisk(char directory[], char arqName[])
 {
@@ -534,8 +471,6 @@ int readDataOnDisk(char directory[], char arqName[])
 	uint16_t FATAdress = bufferDir._dirEntry[indexDirAndress].firstBlock;
 	if (FATAdress != endCluster)
 	{
-		/*fseek(FATDisk, FATAdress * totalCountCluster, SEEK_SET);
-		fread(bufferData.data, clusterSize, 1, FATDisk);*/
 	
 		do 
 		{
@@ -577,34 +512,26 @@ int showAllDirEntrys(char directory[])
 	return SUCCESSFUL_VALUE;
 }
 
-//Função de impressão da Table Fat
-void printFat() {
-	for (int i = 0; i < tableFATSize; i++)
-	{
-		printf(" %x ", tableFAT[i].entry);
-		if (i % 6 == 0)
-			printf("\n");
-	}
-
-}
-
 //int main() {
 //	printf("\nkk\n");
 //	createNewVirtualFATDisk();
-//	createNewFile("/", "file");
-//	dataCluster* teste = (dataCluster*)calloc(1, sizeof(dataCluster));
-//	dataCluster* teste_ = (dataCluster*)calloc(1, sizeof(dataCluster));
-//		char* testeDeArquivo = "testandoEscritaDeArquivo";
-//		char* test2 = (char*)calloc(1024, 1);
-//		sprintf(test2, "%s", "ijsokflffffffffffffffflflflflflflflflflflflflflflflflflflflflflflflflflflflflflflflflflflflflflflflflflflflflflflflaffffffffffffffffafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafaf");
-//		memcpy(teste[0].data, testeDeArquivo, 24);
-//		memcpy(teste_[0].data, test2, 1024);
+//	createNewDirEntry("/", "teste");
+//	createNewDirEntry("/teste", "teste1");
+//	createNewDirEntry("/teste/teste1/teste2", "teste3");
+//	//createNewFile("/", "file");
+//	//dataCluster* teste = (dataCluster*)calloc(1, sizeof(dataCluster));
+//	//dataCluster* teste_ = (dataCluster*)calloc(1, sizeof(dataCluster));
+//	//	char* testeDeArquivo = "testandoEscritaDeArquivo";
+//	//	char* test2 = (char*)calloc(1024, 1);
+//	//	sprintf(test2, "%s", "ijsokflffffffffffffffflflflflflflflflflflflflflflflflflflflflflflflflflflflflflflflflflflflflflflflflflflflflflflflaffffffffffffffffafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafaf");
+//	//	memcpy(teste[0].data, testeDeArquivo, 24);
+//	//	memcpy(teste_[0].data, test2, 1024);
 //
-//		writeDataOnDisk(teste, 1, "/", "file");
-//		//appendDataOnDisk(teste, 1, "/root", "file");
-//		//writeDataOnDisk(teste, 1, "/", "file");
-//		readDataOnDisk("/", "file");
-//		appendDataOnDisk(teste_, 1, "/", "file");
+//	//	writeDataOnDisk(teste, 1, "/", "file");
+//	//	//appendDataOnDisk(teste, 1, "/root", "file");
+//	//	//writeDataOnDisk(teste, 1, "/", "file");
+//	//	readDataOnDisk("/", "file");
+//	//	appendDataOnDisk(teste_, 1, "/", "file");
 //}
 
 int main() {
@@ -874,6 +801,9 @@ int main() {
 
 			free(readyDIR);
 			free(arqName);
+		}
+		else if (strcmp(inputs[0], "exit") == 0) {
+
 		}
 		else {
 			printf("\nComando não encontrado\n");
