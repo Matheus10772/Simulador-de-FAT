@@ -175,20 +175,21 @@ uint16_t loadAvaliableDIrEntry(char directory[])
 		fseek(FATDisk, StartRootDIR, 0);
 		fread(bufferDir._dirEntry, sizeof(dirEntry), DIRMaxCountEntry, FATDisk);
 		while (directoryReady[index] != 0) {
-			controle = 0;
 			for (int i = 0; i < DIRMaxCountEntry; i++) {
 				if (memcmp(&(bufferDir._dirEntry[i]), freeDir, dirEntrySize) != 0) { //não está vazio{
 					if (strcmp(bufferDir._dirEntry[i].filename, directoryReady[index]) == 0) { //São iguais
+						controle = 1;
 						currentAdress = bufferDir._dirEntry[i].firstBlock;
 						clearBuffer();
 						fseek(FATDisk, currentAdress * totalCountCluster, SEEK_SET);
 						fread(bufferDir._dirEntry, sizeof(dirEntry), DIRMaxCountEntry, FATDisk);
-						controle = 1;
 						break;
 					}
+					else
+						controle = 0;
 				}
 			}
-			if (!controle)
+			if (controle == 0)
 				return FALIED_VALUE; //diretorio não encontrado
 			index++;
 		}
