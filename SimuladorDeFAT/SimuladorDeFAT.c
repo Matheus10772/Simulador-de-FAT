@@ -240,7 +240,7 @@ int findFreeDir(dataCluster* bufferDIR)
 int writeDataOnDisk(dataCluster buffer[], int countBuffer, char directory[], char arqName[])
 {
 	uint16_t adress = loadAvaliableDIrEntry(directory);
-	if (adress == FALIED_VALUE)
+	if (adress == endCluster)
 		return FALIED_VALUE;
 	FILE* FATDisk;
 	FATDisk = fopen(FATDiskName, "r+b");
@@ -299,7 +299,7 @@ int appendDataOnDisk(dataCluster buffer[], int countBuffer, char directory[], ch
 		return FALIED_VALUE;
 	}
 	uint16_t adress = loadAvaliableDIrEntry(directory);
-	if (adress == FALIED_VALUE)
+	if (adress == endCluster)
 		return FALIED_VALUE;
 	fseek(FATDisk, adress * totalCountCluster, SEEK_SET);
 	clearBuffer();
@@ -355,7 +355,7 @@ int appendDataOnDisk(dataCluster buffer[], int countBuffer, char directory[], ch
 int createNewFile(char directory[], char arqName[])
 {
 	uint16_t adress = loadAvaliableDIrEntry(directory);
-	if (adress == FALIED_VALUE)
+	if (adress == endCluster)
 		return FALIED_VALUE;
 	FILE* FATDisk = fopen(FATDiskName, "r+b");
 	if (FATDisk == NULL) {
@@ -408,7 +408,7 @@ int deleteEntryOnDisk(char directory[], char arqName[])
 {
 
 	uint16_t adress = loadAvaliableDIrEntry(directory);
-	if (adress == FALIED_VALUE) {
+	if (adress == endCluster) {
 		return FALIED_VALUE;
 	}
 	FILE* FATDisk = fopen(FATDiskName, "r+b");
@@ -452,7 +452,7 @@ int deleteEntryOnDisk(char directory[], char arqName[])
 int readDataOnDisk(char directory[], char arqName[])
 {
 	uint16_t adress = loadAvaliableDIrEntry(directory);
-	if (adress == FALIED_VALUE)
+	if (adress == endCluster)
 		return FALIED_VALUE;
 	FILE* FATDisk = fopen(FATDiskName, "r+b");
 	if (FATDisk == NULL) {
@@ -489,7 +489,7 @@ int showAllDirEntrys(char directory[])
 {
 
 	uint16_t adress = loadAvaliableDIrEntry(directory);
-	if (adress == FALIED_VALUE)
+	if (adress == endCluster)
 		return FALIED_VALUE;
 	FILE* FATDisk = fopen(FATDiskName, "r+b");
 	if (FATDisk == NULL) {
@@ -518,9 +518,16 @@ int showAllDirEntrys(char directory[])
 //	createNewVirtualFATDisk();
 //	createNewDirEntry("/", "teste");
 //	createNewDirEntry("/teste", "teste1");
-//	createNewDirEntry("/teste/teste1/teste2", "teste3");
+//	createNewFile("/teste/teste1", "file");
+//	dataCluster* teste = (dataCluster*)calloc(1, sizeof(dataCluster));
+//		char* testeDeArquivo = "testandoEscritaDeArquivo";
+//		char* test2 = (char*)calloc(1024, 1);
+//		sprintf(test2, "%s", "ijsokflffffffffffffffflflflflflflflflflflflflflflflflflflflflflflflflflflflflflflflflflflflflflflflflflflflflflflflaffffffffffffffffafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafafaf");
+//		memcpy(teste[0].data, testeDeArquivo, 24);
+//		writeDataOnDisk(teste, 1, "/teste/teste1", "file");
+//	//createNewDirEntry("/teste/teste1/teste2", "teste3");
 //	//createNewFile("/", "file");
-//	//dataCluster* teste = (dataCluster*)calloc(1, sizeof(dataCluster));
+//	
 //	//dataCluster* teste_ = (dataCluster*)calloc(1, sizeof(dataCluster));
 //	//	char* testeDeArquivo = "testandoEscritaDeArquivo";
 //	//	char* test2 = (char*)calloc(1024, 1);
@@ -558,6 +565,10 @@ int main() {
 		}
 		else if (strcmp(inputs[0], "ls") == 0)
 		{
+			if (strcmp(&(inputs[1][strlen(inputs[1]) - 1]), "/") == 0)
+			{
+				inputs[1][strlen(inputs[1]) - 1] = 0;
+			}
 			result = showAllDirEntrys(inputs[1]);
 			if (result == FALIED_VALUE)
 				printf("\nO diretório informado não existe\n");
@@ -611,7 +622,6 @@ int main() {
 			}
 			index--;
 			sprintf(arqName, "%s", readyDIR[index]);
-			printf("\nArqname: %s\n", arqName);
 			if (index > 0) {
 				subString(inputs[1], arqName);
 			}
@@ -705,10 +715,14 @@ int main() {
 			else {
 				sprintf(inputs[2], "%s", "/");
 			}
-
+			if (strcmp(&(inputs[2][strlen(inputs[2]) - 1]), "/") == 0)
+			{
+				inputs[2][strlen(inputs[2]) - 1] = 0;
+			}
 			result = writeDataOnDisk(buffer, indexBuffer, inputs[2], arqName);
 			if (result == FALIED_VALUE)
-				printf("\nNão foi possível completar a operação. O arquivo não existe ou não existe espaço em disco disponível\n");			else
+				printf("\nNão foi possível completar a operação. O arquivo não existe ou não existe espaço em disco disponível\n");			
+			else
 				printf("\nString escrita em %s\n", inputs[2]);
 
 			free(readyDIR);
@@ -763,6 +777,10 @@ int main() {
 			else {
 				sprintf(inputs[2], "%s", "/");
 			}
+			if (strcmp(&(inputs[2][strlen(inputs[2]) - 1]), "/") == 0)
+			{
+				inputs[2][strlen(inputs[2]) - 1] = 0;
+			}
 
 			result = appendDataOnDisk(buffer, indexBuffer, inputs[2], arqName);
 			if (result == FALIED_VALUE)
@@ -795,8 +813,10 @@ int main() {
 			else {
 				sprintf(inputs[1], "%s", "/");
 			}
-			printf("\narqName: %s\n", arqName);
-			printf("\ndir: %s\n", inputs[1]);
+			if (strcmp(&(inputs[1][strlen(inputs[1]) - 1]), "/") == 0)
+			{
+				inputs[1][strlen(inputs[1]) - 1] = 0;
+			}
 			if (readDataOnDisk(inputs[1], arqName) == FALIED_VALUE)
 				printf("\nNão foi possível ler o arquivo. O arquivo não existe");
 
